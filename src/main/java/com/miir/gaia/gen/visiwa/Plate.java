@@ -1,4 +1,4 @@
-package com.miir.gaia.gen.vulcan;
+package com.miir.gaia.gen.visiwa;
 
 import com.miir.gaia.gen.WorldGenerator;
 import net.minecraft.util.math.Vec2f;

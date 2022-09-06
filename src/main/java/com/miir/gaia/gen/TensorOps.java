@@ -1,7 +1,5 @@
 package com.miir.gaia.gen;
 
-import com.miir.gaia.gen.vulcan.Vulcan;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec2f;
 
 import java.awt.*;
@@ -14,13 +12,13 @@ public abstract class TensorOps {
         for (int x = 0; x < arr.length; x++) {
             for (int y = 0; y < arr[x].length; y++) {
                 ArrayList<Float> neighbors = new ArrayList<>();
-                gradient[x][y] = ((float) slope(arr, x, y, WorldGenerator::isValidAtlasPos));
+                gradient[x][y] = ((float) gradient(arr, x, y, WorldGenerator::isValidAtlasPos));
             }
         }
         return gradient;
     }
 
-    protected static double slope(float[][] arr, int x, int y, Function<Point, Boolean> isValid) {
+    protected static double gradient(float[][] arr, int x, int y, Function<Point, Boolean> isValid) {
         double gxl = Double.MAX_VALUE;
         double gxr = Double.MAX_VALUE;
         double gyl = Double.MAX_VALUE;

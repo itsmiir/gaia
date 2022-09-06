@@ -1,4 +1,4 @@
-package com.miir.gaia.gen.vulcan;
+package com.miir.gaia.gen.visiwa;
 
 import net.minecraft.util.math.Vec2f;
 
@@ -16,7 +16,7 @@ public class AtlasPoint implements Cloneable {
     }
     private float value;
     private Plate plate;
-    private int n = Vulcan.DRIFT_TIME;
+    private int n = Visiwa.DRIFT_TIME;
     private Vec2f velocity;
     private Point location;
 
@@ -29,7 +29,7 @@ public class AtlasPoint implements Cloneable {
     }
     public Vec2f getVelocity() {
 
-        return velocity == null ? new Vec2f(0, 0) : velocity.multiply(n / ((float) Vulcan.DRIFT_TIME));
+        return velocity == null ? new Vec2f(0, 0) : velocity.multiply(n / ((float) Visiwa.DRIFT_TIME));
     }
     public AtlasPoint setVelocity(Vec2f velocity) {
         this.velocity = velocity;

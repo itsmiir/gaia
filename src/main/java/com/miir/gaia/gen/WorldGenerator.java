@@ -1,8 +1,8 @@
 package com.miir.gaia.gen;
 
 import com.miir.gaia.Gaia;
-import com.miir.gaia.gen.vulcan.AtlasPoint;
-import com.miir.gaia.gen.vulcan.Vulcan;
+import com.miir.gaia.gen.visiwa.AtlasPoint;
+import com.miir.gaia.gen.visiwa.Visiwa;
 import com.miir.gaia.world.gen.GaiaChunkGenerator;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -41,7 +41,7 @@ public abstract class WorldGenerator {
     public static final int MEAN_SEAFLOOR_DEPTH = -5000;
 
 
-    // noise settings used by vulcan
+    // noise settings used by visiwa
     public static final int ATLAS_WIDTH = 512;
     public static final int HEIGHTMAP_OCTAVES = 6;
     public static final int SCALE_FACTOR = 2;
@@ -56,7 +56,7 @@ public abstract class WorldGenerator {
         RANDOM = new Random(seed);
         simplex = new SimplexNoiseSampler(new CheckedRandom(SEED));
         INITIALIZED = true;
-        Vulcan.MAP = new AtlasPoint[ATLAS_WIDTH][ATLAS_WIDTH];
+        Visiwa.MAP = new AtlasPoint[ATLAS_WIDTH][ATLAS_WIDTH];
     }
 
     public static double sampleSimplex(double x, double y) {
@@ -88,5 +88,6 @@ public abstract class WorldGenerator {
     }
 
     public static void register() {
+        Registry.register(Registry.CHUNK_GENERATOR, Gaia.id("gaia"), GaiaChunkGenerator.CODEC);
     }
 }

@@ -2,7 +2,7 @@ package com.miir.gaia.world.gen;
 
 import com.google.common.collect.Sets;
 import com.miir.gaia.gen.WorldGenerator;
-import com.miir.gaia.gen.volos.Volos;
+import com.miir.gaia.gen.vulcan.Vulcan;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.SharedConstants;
@@ -203,7 +203,7 @@ public class GaiaChunkGenerator extends ChunkGenerator {
                                 int localZ = absoluteZ & 0xF;
 
 //                                sample the blockstate at the current sample point
-                                BlockState blockState = Volos.sampleNoise(absoluteX, absoluteY, absoluteZ);
+                                BlockState blockState = Vulcan.sampleNoise(absoluteX, absoluteY, absoluteZ);
                                 if (blockState == null) {
                                     blockState = WorldGenerator.DEFAULT_BLOCK;
                                 }
@@ -252,13 +252,13 @@ public class GaiaChunkGenerator extends ChunkGenerator {
 
     @Override
     public int getHeight(int x, int z, Heightmap.Type heightmap, HeightLimitView world, NoiseConfig noiseConfig) {
-        return Volos.getHeight(x, z);
+        return Vulcan.getHeight(x, z);
     }
 
     @Override
     public VerticalBlockSample getColumnSample(int x, int z, HeightLimitView world, NoiseConfig noiseConfig) {
         BlockState[] states = new BlockState[getWorldHeight()];
-        int h = Volos.getHeight(x, z);
+        int h = Vulcan.getHeight(x, z);
         for (int i = 0; i < getWorldHeight(); i++) {
             if (i <= h) {
                 states[i] = settings.defaultBlock();
