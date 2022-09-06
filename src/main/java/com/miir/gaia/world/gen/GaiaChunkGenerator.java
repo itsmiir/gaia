@@ -3,7 +3,6 @@ package com.miir.gaia.world.gen;
 import com.google.common.collect.Sets;
 import com.miir.gaia.gen.WorldGenerator;
 import com.miir.gaia.gen.volos.Volos;
-import com.mojang.datafixers.Products;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.SharedConstants;
@@ -43,11 +42,19 @@ public class GaiaChunkGenerator extends ChunkGenerator {
     public static final BlockState AIR = Blocks.AIR.getDefaultState();
     private final ChunkGeneratorSettings settings;
     private final AquiferSampler.FluidLevelSampler fluidLevelSampler;
-    public static final Codec<GaiaChunkGenerator> CODEC = RecordCodecBuilder.create(instance -> instance.group(Codec.LONG.fieldOf("seed").forGetter(GaiaChunkGenerator::getSeed)).apply(instance, GaiaChunkGenerator::new));
+    private Registry<Biome> biomes;
+    private Registry<StructureSet> structureSets;
+
+    public static final Codec<GaiaChunkGenerator> CODEC = RecordCodecBuilder.create(
+            instance -> instance.group(
+                    Codec.LONG.fieldOf("seed").forGetter(GaiaChunkGenerator::getSeed),
+                    RegistryOps.createRegistryCodec(Registry.BIOME_KEY).forGetter(GaiaChunkGenerator::getBiomes),
+                    RegistryOps.createRegistryCodec(Registry.STRUCTURE_SET_KEY).forGetter(GaiaChunkGenerator::getStructureSets))
+                    .apply(instance, GaiaChunkGenerator::new));
     public long seed = 0;
 
-    public GaiaChunkGenerator(long seed) {
-        super(BuiltinRegistries.STRUCTURE_SET, Optional.empty(), MultiNoiseBiomeSource.Preset.OVERWORLD.getBiomeSource(BuiltinRegistries.BIOME));
+    public GaiaChunkGenerator(long seed, Registry<Biome> biomes, Registry<StructureSet> structures) {
+        super(structures, Optional.empty(), MultiNoiseBiomeSource.Preset.OVERWORLD.getBiomeSource(biomes));
         this.seed = seed;
         ChunkGeneratorSettings chunkGeneratorSettings = BuiltinRegistries.CHUNK_GENERATOR_SETTINGS.getOrCreateEntry(ChunkGeneratorSettings.OVERWORLD).value();
         this.settings = chunkGeneratorSettings;
@@ -79,6 +86,12 @@ public class GaiaChunkGenerator extends ChunkGenerator {
 
     public long getSeed() {
         return seed;
+    }
+    public Registry<StructureSet> getStructureSets() {
+        return structureSets;
+    }
+    public Registry<Biome> getBiomes() {
+        return biomes;
     }
 
     @Override
@@ -264,8 +277,5 @@ public class GaiaChunkGenerator extends ChunkGenerator {
     @Override
     protected Codec<? extends ChunkGenerator> getCodec() {
         return CODEC;
-    }
-    protected static <T extends ChunkGenerator> Products.P1<RecordCodecBuilder.Mu<T>, Registry<StructureSet>> createStructureSetRegistryGetter(RecordCodecBuilder.Instance<T> instance) {
-        return instance.group(RegistryOps.createRegistryCodec(Registry.STRUCTURE_SET_KEY).forGetter(chunkGenerator -> chunkGenerator.structureSetRegistry));
     }
 }

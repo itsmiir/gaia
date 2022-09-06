@@ -28,7 +28,7 @@ public class Gaia implements ModInitializer {
 		long seed = System.nanoTime();
 		WorldGenerator.initialize(seed);
 		Vulcan.build();
-//		MapPrinter.printAtlas("map", Vulcan::colorWithMarkers);
+		MapPrinter.printAtlas("map", Vulcan::colorWithMarkers);
 //		throw new IllegalStateException(Long.toString(seed));
 	}
 
