@@ -14,11 +14,7 @@ import java.util.Random;
 /**
  * vulcan is the module that builds the world on a macroscopic scale. it handles large scale features such as mountain ranges
  */
-public class Vulcan {
-    // todo remove this
-    public static boolean DEBUG_BOOLEAN_PLEASE_REMOVE = false;
-
-
+public abstract class Vulcan {
     public static final int PLATE_COUNT = 25; // approximate :)
     private static final float SUBDUCTION_RATE = 0.2f;
     public static final int DRIFT_TIME = 12;
@@ -26,12 +22,11 @@ public class Vulcan {
     private static final float RIFT_MULTIPLIER = 0.75f;
     private static final float PLATE_SPEED = 20f;
     private static final float COASTLINE_SMOOTHNESS = 0.05f;
-    private static final float LAND_OFFSET = 0.6f;
+    private static final float LAND_OFFSET = 0.55f;
     private static final float DEPOSITION_STRENGTH = 0.1f;
     private static final double PLATE_JAGGEDNESS = WorldGenerator.ATLAS_WIDTH;
     public static AtlasPoint[][] MAP = new AtlasPoint[WorldGenerator.ATLAS_WIDTH][WorldGenerator.ATLAS_WIDTH];
     public static float[][] SLOPE;
-    private static float[][] PLATE_BOUNDARIES;
     private static final ArrayList<Point> PLATE_CENTERS = new ArrayList<>();
     private static final ArrayList<Plate> TECTONIC_PLATES = new ArrayList<>();
 
@@ -39,7 +34,6 @@ public class Vulcan {
      * the function that creates the base shape of the world
      */
     public static void build() {
-        PLATE_BOUNDARIES = new float[WorldGenerator.ATLAS_WIDTH][WorldGenerator.ATLAS_WIDTH];
         if (WorldGenerator.INITIALIZED) {
             for (int i = 0; i < MAP.length; i++) {
                 for (int j = 0; j < MAP[0].length; j++) {
@@ -50,7 +44,7 @@ public class Vulcan {
                 for (int y = 0; y < WorldGenerator.ATLAS_WIDTH; y++) {
                     float cx = ((float) x) / WorldGenerator.ATLAS_WIDTH;
                     float cy = ((float) y) / WorldGenerator.ATLAS_WIDTH;
-                    float f = simplexTerrain(cx, cy, true);
+                    float f = simplexTerrain(cx*2f, cy*2f, false);
                     f += WorldGenerator.baseHeight(cx, cy);
                     MAP[x][y].setValue(MathHelper.clamp(f, 0, 1));
                 }
@@ -61,7 +55,6 @@ public class Vulcan {
             applyVelocity();
             for (int i = 0; i < DRIFT_TIME; i++) {
 //                MapPrinter.printAtlas("map" + i, Vulcan::colorWithMarkers);
-                DEBUG_BOOLEAN_PLEASE_REMOVE = !DEBUG_BOOLEAN_PLEASE_REMOVE;
                 drift(DRIFT_DELTA);
                 erode(2f, 1);
             }
@@ -263,7 +256,6 @@ public class Vulcan {
                                 closestPoint = point;
                             }
                         }
-                        PLATE_BOUNDARIES[x][y] = Math.min((WorldGenerator.ATLAS_WIDTH / 3f - dist) / (WorldGenerator.ATLAS_WIDTH / 3f), 1);
                     }
                 }
             }
@@ -358,21 +350,11 @@ public class Vulcan {
                 }
             }
         }
-        if (TensorOps.isTrough(PLATE_BOUNDARIES, p.x, p.y, 10, MAP[p.x][p.y].getValue() * 0, 0.495f, WorldGenerator::isValidAtlasPos)) {
-//            return 0xFFFFFF;
-
-        } return colorElevation(p);
+        return colorElevation(p);
     }
 
-    public static int muxPlatesAndElevation(Point p) {
-        float simplexOpacity = 0.5f;
-        float h = Vulcan.PLATE_BOUNDARIES[p.x][p.y] * (1 - simplexOpacity);
-        h += Vulcan.MAP[p.x][p.y].getValue() * simplexOpacity;
-        int c = (int) (h * 255);
-        if (c < 64 && c != 0) {
-            return 0xFF0000;
-        }
-        return c << 16 | c << 8 | c;
+    public static int blockToAtlasCoord(int x) {
+        return Math.abs(x) % WorldGenerator.ATLAS_WIDTH;
     }
 }
 

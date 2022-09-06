@@ -1,14 +1,23 @@
 package com.miir.gaia.gen;
 
+import com.miir.gaia.Gaia;
 import com.miir.gaia.gen.vulcan.AtlasPoint;
 import com.miir.gaia.gen.vulcan.Vulcan;
+import com.miir.gaia.world.gen.GaiaChunkGenerator;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.util.math.noise.SimplexNoiseSampler;
 import net.minecraft.util.math.random.CheckedRandom;
+import net.minecraft.util.registry.Registry;
 
 import java.awt.*;
 import java.util.Random;
 
 public abstract class WorldGenerator {
+    public static final BlockState DEFAULT_BLOCK = Blocks.STONE.getDefaultState();
+    public static final int WORLDGEN_BASE_HEIGHT = 256;
+    public static final int WORLD_HEIGHT = 384;
+    public static final int MIN_Y = -64;
     public static long SEED;
     private static Random RANDOM;
     private static SimplexNoiseSampler simplex;
@@ -22,7 +31,7 @@ public abstract class WorldGenerator {
     public static final int WORLD_RADIUS = 400000;
 
     /**
-     * the world surface height is stored as a float from -1 to 1; mapped to these values. earth's surface deviates by
+     * the world surface height is stored as a float from 0 to 1; mapped to these values. earth's surface deviates by
      * about ±10 km ASL in each direction, which is super convenient
      */
     public static final int MAX_HEIGHT = 10000;
@@ -76,5 +85,8 @@ public abstract class WorldGenerator {
         float xMod = x*2-1;
         float yMod = y*2-1;
         return (Math.sqrt(Math.pow(xMod, 2) + Math.pow(yMod, 2)) > 1) ? -1 : 0.1f;
+    }
+
+    public static void register() {
     }
 }
