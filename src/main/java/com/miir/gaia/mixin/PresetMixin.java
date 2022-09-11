@@ -23,16 +23,28 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(WorldPresets.Registrar.class)
 public abstract class PresetMixin {
     @Shadow protected abstract RegistryEntry<WorldPreset> register(RegistryKey<WorldPreset> key, DimensionOptions dimensionOptions);
-    @Shadow protected abstract DimensionOptions createOverworldOptions(ChunkGenerator chunkGenerator);
 
     @Shadow @Final private Registry<StructureSet> structureSetRegistry;
     @Shadow @Final private Registry<Biome> biomeRegistry;
+
+    @Shadow protected abstract DimensionOptions createOverworldOptions(ChunkGenerator chunkGenerator);
+
+
+
     // defining our registry key. this key provides an Identifier for our preset, that we can use for our lang files and data elements.
     private static final RegistryKey<WorldPreset> GAIA = RegistryKey.of(Registry.WORLD_PRESET_KEY, Gaia.id("gaia"));
 
     @Inject(method = "initAndGetDefault", at = @At("RETURN"))
     private void addPresets(CallbackInfoReturnable<RegistryEntry<WorldPreset>> cir) {
         // the register() method is shadowed from the target class
-        this.register(GAIA, this.createOverworldOptions(new GaiaChunkGenerator(biomeRegistry, structureSetRegistry)));
+        this.register(
+                GAIA, new DimensionOptions(
+                        BuiltinRegistries.DIMENSION_TYPE.entryOf(
+                                RegistryKey.of(
+                                        Registry.DIMENSION_TYPE_KEY,
+                                        Gaia.id("gaia"))),
+                        new GaiaChunkGenerator(
+                                biomeRegistry,
+                                structureSetRegistry)));
     }
 }

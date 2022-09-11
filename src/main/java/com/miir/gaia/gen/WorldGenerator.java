@@ -6,6 +6,7 @@ import com.miir.gaia.gen.visiwa.Visiwa;
 import com.miir.gaia.world.gen.GaiaChunkGenerator;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.noise.SimplexNoiseSampler;
 import net.minecraft.util.math.random.CheckedRandom;
 import net.minecraft.util.registry.Registry;
@@ -16,8 +17,10 @@ import java.util.Random;
 public abstract class WorldGenerator {
     public static final BlockState DEFAULT_BLOCK = Blocks.STONE.getDefaultState();
     public static final int WORLDGEN_BASE_HEIGHT = 256;
-    public static final int WORLD_HEIGHT = 384;
-    public static final int MIN_Y = -64;
+    public static final BlockState DEFAULT_FLUID = Blocks.WATER.getDefaultState();
+    public static final int MAX_PLATEAU_Y = 1000;
+    public static final int LAVA_LEVEL = -100;
+    public static boolean SHOULD_GENERATE = false;
     public static long SEED;
     private static Random RANDOM;
     private static SimplexNoiseSampler simplex;
@@ -28,35 +31,40 @@ public abstract class WorldGenerator {
      * a radius of 400,000 m -> π*4000000² = 502.655 Gm²; compare to earth's surface area of 510.072 Gm². a more accurate
      * approximation would be 402,940 m -> 510.0710 Gm²
      */
-    public static final int WORLD_RADIUS = 400000;
+    public static final int WORLD_RADIUS = 4000;
 
     /**
      * the world surface height is stored as a float from 0 to 1; mapped to these values. earth's surface deviates by
-     * about ±10 km ASL in each direction, which is super convenient
+     * almost exactly ±10 km ASL in each direction, which is super convenient, but also really, really big. until i implement some
+     * sort of cubic chunks, there's no way your computer will handle 16x16x20000 chunks (with maybe 100 blocks on each
+     * end shaved off for caves/mountain builds). for those keeping track at home 20000 m-tall chunks are about 50 times
+     * as big as the vanilla chunks.
      */
-    public static final int MAX_HEIGHT = 10000;
+    public static final int MAX_HEIGHT = 1024;
     public static final int SEA_LEVEL = 0;
-    public static final int MIN_SEAFLOOR_HEIGHT = -10000;
+    public static final int MIN_HEIGHT = -MAX_HEIGHT;
     //    this value is used to determine the starting seafloor height
-    public static final int MEAN_SEAFLOOR_DEPTH = -5000;
+    public static final int MEAN_SEAFLOOR_DEPTH = MIN_HEIGHT / 2;
 
 
     // noise settings used by visiwa
     public static final int ATLAS_WIDTH = 512;
     public static final int HEIGHTMAP_OCTAVES = 6;
-    public static final int SCALE_FACTOR = 2;
     public static final int ATLAS_AREA = (int) ((ATLAS_WIDTH/2f)*(ATLAS_WIDTH/2f)*Math.PI);
 
+    public static AtlasPoint[][] MAP;
 
-
-
-
-    public static void initialize(long seed) {
+    public static void initialize(long seed, String path) {
         SEED = seed;
         RANDOM = new Random(seed);
         simplex = new SimplexNoiseSampler(new CheckedRandom(SEED));
         INITIALIZED = true;
-        Visiwa.MAP = new AtlasPoint[ATLAS_WIDTH][ATLAS_WIDTH];
+        MAP = Visiwa.readAtlas(path);
+        if (SHOULD_GENERATE) {
+            Visiwa.build(path);
+            Visiwa.writeAtlas(path);
+            SHOULD_GENERATE = false;
+        }
     }
 
     public static double sampleSimplex(double x, double y) {
@@ -80,7 +88,19 @@ public abstract class WorldGenerator {
     public static boolean isValidAtlasPos(Point p) {
         return isValidAtlasPos(p.x, p.y);
     }
+    public static boolean isInsideWorld(int x, int z) {
+        int atlasX = Visiwa.blockToAtlasCoord(x);
+        int atlasZ = Visiwa.blockToAtlasCoord(z);
+        if (atlasX == -1 || atlasZ == -1) return false;
+        else return isValidAtlasPos(atlasX, atlasZ);
+    }
+    public static boolean isValidChunk(ChunkPos pos) {
+        return isInsideWorld(pos.x / 16, pos.z / 16);
+    }
 
+    /**
+     * this function takes in a uv coordinate from an (assumed to be square) map, and uses that to generate the circle shape that the world follows
+     */
     public static float baseHeight(float x, float y) {
         float xMod = x*2-1;
         float yMod = y*2-1;

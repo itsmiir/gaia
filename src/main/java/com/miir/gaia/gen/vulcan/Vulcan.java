@@ -23,8 +23,15 @@ public abstract class Vulcan {
     public static int getHeight(int x, int z) {
         int modX = Visiwa.blockToAtlasCoord(x);
         int modZ = Visiwa.blockToAtlasCoord(z);
-        float elevation = Visiwa.MAP[modX][modZ].getValue();
+        if (modX == -1 || modZ == -1) return 0;
+        float elevation = WorldGenerator.MAP[modX][modZ].getElevation();
+        float y = Visiwa.scaleElevation(elevation);
+        y += sampleSurfaceNoise(modX, modZ);
         return Math.round(elevation * WorldGenerator.WORLDGEN_BASE_HEIGHT) - 64;
+    }
+
+    private static float sampleSurfaceNoise(int blockX, int blockZ) {
+        return 0;
     }
 
 }

@@ -3,22 +3,39 @@ package com.miir.gaia.gen.visiwa;
 import net.minecraft.util.math.Vec2f;
 
 import java.awt.*;
+import java.io.Serializable;
 
-public class AtlasPoint implements Cloneable {
+public class AtlasPoint implements Cloneable, Serializable {
 
     public AtlasPoint(int x, int y) {
-        this.value = 0;
+        this.elevation = 0;
         this.location = new Point(x, y);
     }
-    public AtlasPoint(float value, int x, int y) {
+    public AtlasPoint(float elevation, int x, int y) {
         this(x, y);
-        this.value = value;
+        this.elevation = elevation;
     }
-    private float value;
-    private Plate plate;
-    private int n = Visiwa.DRIFT_TIME;
-    private Vec2f velocity;
-    private Point location;
+
+    public float getHumidity() {
+        return humidity;
+    }
+    public void setHumidity(float humidity) {
+        this.humidity = humidity;
+    }
+    public float getTemperature() {
+        return temperature;
+    }
+    public void setTemperature(float temperature) {
+        this.temperature = temperature;
+    }
+
+    private float elevation;
+    private float humidity;
+    private float temperature;
+    private transient Plate plate;
+    private transient int n = Visiwa.DRIFT_TIME;
+    private transient Vec2f velocity;
+    private transient Point location;
 
     public Plate getPlate() {
         return plate;
@@ -47,11 +64,11 @@ public class AtlasPoint implements Cloneable {
         this.location = location;
         return this;
     }
-    public float getValue() {
-        return value;
+    public float getElevation() {
+        return elevation;
     }
-    public AtlasPoint setValue(float value) {
-        this.value = value;
+    public AtlasPoint setElevation(float elevation) {
+        this.elevation = elevation;
         return this;
     }
 
@@ -70,7 +87,7 @@ public class AtlasPoint implements Cloneable {
         try {
             return (AtlasPoint) super.clone();
         } catch (CloneNotSupportedException e) {
-            AtlasPoint clone = new AtlasPoint(this.value, this.location.x, this.location.y);
+            AtlasPoint clone = new AtlasPoint(this.elevation, this.location.x, this.location.y);
             clone.plate = this.plate;
             clone.n = this.n;
             clone.velocity = this.velocity;

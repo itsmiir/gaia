@@ -1,6 +1,7 @@
 package com.miir.gaia.world.gen;
 
 import com.google.common.collect.Sets;
+import com.miir.gaia.Gaia;
 import com.miir.gaia.gen.WorldGenerator;
 import com.miir.gaia.gen.vulcan.Vulcan;
 import com.mojang.serialization.Codec;
@@ -14,11 +15,16 @@ import net.minecraft.util.dynamic.RegistryOps;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.random.CheckedRandom;
+import net.minecraft.util.math.random.ChunkRandom;
+import net.minecraft.util.math.random.RandomSeed;
 import net.minecraft.util.registry.BuiltinRegistries;
 import net.minecraft.util.registry.Registry;
+import net.minecraft.util.registry.RegistryEntry;
 import net.minecraft.world.ChunkRegion;
 import net.minecraft.world.HeightLimitView;
 import net.minecraft.world.Heightmap;
+import net.minecraft.world.SpawnHelper;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.source.BiomeAccess;
 import net.minecraft.world.biome.source.MultiNoiseBiomeSource;
@@ -39,6 +45,7 @@ import java.util.concurrent.Executor;
 
 
 public class GaiaChunkGenerator extends ChunkGenerator {
+
     public static final BlockState AIR = Blocks.AIR.getDefaultState();
     private final ChunkGeneratorSettings settings;
     private final AquiferSampler.FluidLevelSampler fluidLevelSampler;
@@ -47,46 +54,23 @@ public class GaiaChunkGenerator extends ChunkGenerator {
 
     public static final Codec<GaiaChunkGenerator> CODEC = RecordCodecBuilder.create(
             instance -> instance.group(
-                    Codec.LONG.fieldOf("seed").forGetter(GaiaChunkGenerator::getSeed),
                     RegistryOps.createRegistryCodec(Registry.BIOME_KEY).forGetter(GaiaChunkGenerator::getBiomes),
                     RegistryOps.createRegistryCodec(Registry.STRUCTURE_SET_KEY).forGetter(GaiaChunkGenerator::getStructureSets))
-                    .apply(instance, GaiaChunkGenerator::new));
-    public long seed = 0;
-
-    public GaiaChunkGenerator(long seed, Registry<Biome> biomes, Registry<StructureSet> structures) {
-        super(structures, Optional.empty(), MultiNoiseBiomeSource.Preset.OVERWORLD.getBiomeSource(biomes));
-        this.seed = seed;
-        ChunkGeneratorSettings chunkGeneratorSettings = BuiltinRegistries.CHUNK_GENERATOR_SETTINGS.getOrCreateEntry(ChunkGeneratorSettings.OVERWORLD).value();
-        this.settings = chunkGeneratorSettings;
-        int i = chunkGeneratorSettings.seaLevel();
-        AquiferSampler.FluidLevel fluidLevel = new AquiferSampler.FluidLevel(-54, Blocks.LAVA.getDefaultState());
-        AquiferSampler.FluidLevel fluidLevel2 = new AquiferSampler.FluidLevel(i, chunkGeneratorSettings.defaultFluid());
-        this.fluidLevelSampler = (x, y, z) -> {
-            if (y < Math.min(-54, i)) {
-                return fluidLevel;
-            }
-            return fluidLevel2;
-        };
-    }
+            .apply(instance, GaiaChunkGenerator::new));
 
     public GaiaChunkGenerator(Registry<Biome> biomes, Registry<StructureSet> structures) {
         super(structures, Optional.empty(), MultiNoiseBiomeSource.Preset.OVERWORLD.getBiomeSource(biomes));
-        ChunkGeneratorSettings chunkGeneratorSettings = BuiltinRegistries.CHUNK_GENERATOR_SETTINGS.getOrCreateEntry(ChunkGeneratorSettings.OVERWORLD).value();
-        this.settings = chunkGeneratorSettings;
-        int i = chunkGeneratorSettings.seaLevel();
-        AquiferSampler.FluidLevel fluidLevel = new AquiferSampler.FluidLevel(-54, Blocks.LAVA.getDefaultState());
-        AquiferSampler.FluidLevel fluidLevel2 = new AquiferSampler.FluidLevel(i, chunkGeneratorSettings.defaultFluid());
+        this.settings = BuiltinRegistries.CHUNK_GENERATOR_SETTINGS.getOrCreateEntry(ChunkGeneratorSettings.OVERWORLD).value();
+        AquiferSampler.FluidLevel fluidLevel = new AquiferSampler.FluidLevel(WorldGenerator.LAVA_LEVEL, Blocks.LAVA.getDefaultState());
+        AquiferSampler.FluidLevel fluidLevel2 = new AquiferSampler.FluidLevel(WorldGenerator.SEA_LEVEL, WorldGenerator.DEFAULT_FLUID);
         this.fluidLevelSampler = (x, y, z) -> {
-            if (y < Math.min(-54, i)) {
+            if (y < WorldGenerator.LAVA_LEVEL) {
                 return fluidLevel;
             }
             return fluidLevel2;
         };
     }
 
-    public long getSeed() {
-        return seed;
-    }
     public Registry<StructureSet> getStructureSets() {
         return structureSets;
     }
@@ -101,7 +85,6 @@ public class GaiaChunkGenerator extends ChunkGenerator {
 
     @Override
     public void buildSurface(ChunkRegion region, StructureAccessor structures, NoiseConfig noiseConfig, Chunk chunk) {
-
     }
 
     @Override
@@ -111,16 +94,26 @@ public class GaiaChunkGenerator extends ChunkGenerator {
 
     @Override
     public void populateEntities(ChunkRegion region) {
-
+        if (this.settings.mobGenerationDisabled()) {
+            return;
+        }
+        ChunkPos chunkPos = region.getCenterPos();
+        RegistryEntry<Biome> registryEntry = region.getBiome(chunkPos.getStartPos().withY(region.getTopY() - 1));
+        ChunkRandom chunkRandom = new ChunkRandom(new CheckedRandom(RandomSeed.getSeed()));
+        chunkRandom.setPopulationSeed(region.getSeed(), chunkPos.getStartX(), chunkPos.getStartZ());
+        SpawnHelper.populateEntities(region, registryEntry, chunkPos, chunkRandom);
     }
 
     @Override
     public int getWorldHeight() {
-        return WorldGenerator.WORLD_HEIGHT;
+        return WorldGenerator.MAX_HEIGHT;
     }
 
     @Override
     public CompletableFuture<Chunk> populateNoise(Executor executor, Blender blender, NoiseConfig noiseConfig, StructureAccessor structureAccessor, Chunk chunk) {
+        if (!WorldGenerator.isValidChunk(chunk.getPos())) {
+            return CompletableFuture.completedFuture(chunk);
+        }
         GenerationShapeConfig generationShapeConfig = this.settings.generationShapeConfig().trimHeight(chunk.getHeightLimitView());
         int i = generationShapeConfig.minimumY();
         int j = MathHelper.floorDiv(i, generationShapeConfig.verticalBlockSize());
@@ -144,15 +137,14 @@ public class GaiaChunkGenerator extends ChunkGenerator {
     }
     public final Chunk populateNoise(Blender blender, StructureAccessor structureAccessor, NoiseConfig noiseConfig, Chunk chunk, int minCubeY, int cellHeight) {
 //        get the noise sampler
-        ChunkNoiseSampler chunkNoiseSampler = chunk.getOrCreateChunkNoiseSampler(chunk1 -> {
-            return ChunkNoiseSampler.create(
-                    chunk1,
-                    noiseConfig,
-                    StructureWeightSampler.createStructureWeightSampler(structureAccessor, chunk1.getPos()),
-                    this.settings,
-                    this.fluidLevelSampler,
-                    blender
-            );});
+        ChunkNoiseSampler chunkNoiseSampler = chunk.getOrCreateChunkNoiseSampler(chunk1 ->
+                ChunkNoiseSampler.create(
+                        chunk1,
+                        noiseConfig,
+                        StructureWeightSampler.createStructureWeightSampler(structureAccessor, chunk1.getPos()),
+                        this.settings,
+                        this.fluidLevelSampler,
+                        blender));
 //        get the chunk heightmaps for the land and sea, so we can update them when we place each block
         Heightmap oceanFloorHeightmap = chunk.getHeightmap(Heightmap.Type.OCEAN_FLOOR_WG);
         Heightmap worldSurfaceHeightmap = chunk.getHeightmap(Heightmap.Type.WORLD_SURFACE_WG);
@@ -207,10 +199,11 @@ public class GaiaChunkGenerator extends ChunkGenerator {
                                 if (blockState == null) {
                                     blockState = WorldGenerator.DEFAULT_BLOCK;
                                 }
-//                                if the blockstate is air or the world is debug and the current chunk is outside a certain area, no lighting, water, or heightmap updates needed
+//                                if the blockstate is air or the world is debug and the current chunk is outside the generation area,
+//                                no need for lighting, water, or heightmap updates, or even to place the block at all
                                 if (blockState == AIR || SharedConstants.isOutsideGenerationArea(chunk.getPos())) continue;
-
-//                                add the light source to the chunk if it's a ProtoChunk (something to do with lighting)
+                                if (!WorldGenerator.isInsideWorld(absoluteX, absoluteZ)) continue;
+//                                add the light source to the chunk if it's a ProtoChunk
                                 if (blockState.getLuminance() != 0 && chunk instanceof ProtoChunk) {
                                     mutablePos.set(absoluteX, absoluteY, absoluteZ);
                                     ((ProtoChunk) chunk).addLightSource(mutablePos);
@@ -247,7 +240,7 @@ public class GaiaChunkGenerator extends ChunkGenerator {
 
     @Override
     public int getMinimumY() {
-        return WorldGenerator.MIN_Y;
+        return WorldGenerator.MIN_HEIGHT;
     }
 
     @Override
@@ -278,4 +271,5 @@ public class GaiaChunkGenerator extends ChunkGenerator {
     protected Codec<? extends ChunkGenerator> getCodec() {
         return CODEC;
     }
+
 }

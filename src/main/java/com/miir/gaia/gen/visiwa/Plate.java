@@ -4,6 +4,7 @@ import com.miir.gaia.gen.WorldGenerator;
 import net.minecraft.util.math.Vec2f;
 
 import java.awt.*;
+import java.io.Serializable;
 import java.util.ArrayList;
 
 public class Plate {

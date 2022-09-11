@@ -11,8 +11,9 @@ import org.slf4j.LoggerFactory;
 public class Gaia implements ModInitializer {
 	public static final String MOD_ID = "gaia";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+	public static final String ATLAS_PATH = "\\atlas.bin";
 
-	public static Identifier id(String path) {
+    public static Identifier id(String path) {
 		return new Identifier(MOD_ID, path);
 	}
 
@@ -20,10 +21,8 @@ public class Gaia implements ModInitializer {
 	public void onInitialize() {
 		WorldGenerator.register();
 //		long seed = 379541375374700L;
-		long seed = System.nanoTime();
-		WorldGenerator.initialize(seed);
-		Visiwa.build();
-		MapPrinter.printAtlas("map", Visiwa::colorWithMarkers);
+//		long seed = System.nanoTime();
+//		MapPrinter.printAtlas("map", Visiwa::colorWithMarkers);
 //		throw new IllegalStateException(Long.toString(seed));
 	}
 

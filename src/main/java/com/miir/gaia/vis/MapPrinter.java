@@ -2,7 +2,6 @@ package com.miir.gaia.vis;
 
 import com.miir.gaia.Gaia;
 import com.miir.gaia.gen.WorldGenerator;
-import com.miir.gaia.gen.visiwa.Visiwa;
 import net.minecraft.util.math.MathHelper;
 
 import javax.imageio.ImageIO;
@@ -21,12 +20,12 @@ public abstract class MapPrinter {
         return ((int) MathHelper.clamp(x, 0, 255));
     }
     public static int grayscale(Point p) {
-        float h = Visiwa.MAP[p.x][p.y].getValue();
+        float h = WorldGenerator.MAP[p.x][p.y].getElevation();
         int c = (int)(h * 255);
         return c << 16 | c << 8 | c;
     }
     public static int grayscaleCoastline(Point p) {
-        float h = Visiwa.MAP[p.x][p.y].getValue();
+        float h = WorldGenerator.MAP[p.x][p.y].getElevation();
         if (h < 0.51 & h > 0.49) {
             return 0xafa96e;
         } else {
@@ -35,7 +34,7 @@ public abstract class MapPrinter {
         }
     }
     public static int grayscaleWithMarkers(Point p) {
-        float h = Visiwa.MAP[p.x][p.y].getValue();
+        float h = WorldGenerator.MAP[p.x][p.y].getElevation();
         if (h < 0.51 & h > 0.49) {
             return 0xafa96e; // coastline
         } else if (h < 0.34 & h > 0.32) {
