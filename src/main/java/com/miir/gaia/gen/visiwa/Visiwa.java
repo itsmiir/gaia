@@ -9,9 +9,6 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec2f;
 
 import java.awt.*;
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -31,10 +28,11 @@ public abstract class Visiwa {
     private static final ArrayList<Point> PLATE_CENTERS = new ArrayList<>();
     private static final ArrayList<Plate> TECTONIC_PLATES = new ArrayList<>();
 
+
     /**
      * the function that creates the base shape of the world
      */
-    public static void build(String path) {
+    public static void build() {
         if (WorldGenerator.INITIALIZED) {
             for (int i = 0; i < WorldGenerator.MAP.length; i++) {
                 for (int j = 0; j < WorldGenerator.MAP[0].length; j++) {
@@ -283,7 +281,7 @@ public abstract class Visiwa {
     }
 
     public static int blockToAtlasCoord(int x) {
-        int i = x + WorldGenerator.ATLAS_WIDTH/2;
+        int i = ((x + (x >= 0 ? 0 : 1)) / WorldGenerator.SCALE_FACTOR) + WorldGenerator.ATLAS_WIDTH/2;
         if (0 <= i && WorldGenerator.ATLAS_WIDTH > i) {
             return i;
         } else {
@@ -292,44 +290,51 @@ public abstract class Visiwa {
     }
 
     public static float scaleElevation(float elevation) {
-        return elevation * WorldGenerator.MAX_PLATEAU_Y;
+        return elevation * WorldGenerator.WORLDGEN_BASE_HEIGHT - 64;
     }
 
-    public static boolean writeAtlas(String path) {
-        try {
-            Files.createDirectories(Path.of(path, Gaia.MOD_ID));
-            Files.createFile(Path.of(path, Gaia.MOD_ID, Gaia.ATLAS_PATH));
-            FileOutputStream fileOutputStream = new FileOutputStream(path + "\\" +Gaia.MOD_ID +"\\"+ Gaia.ATLAS_PATH);
-            ObjectOutputStream fOut = new ObjectOutputStream(fileOutputStream);
-            fOut.writeObject(WorldGenerator.MAP);
-        } catch (FileNotFoundException e) {
-            Gaia.LOGGER.error("could not write atlas to save directory!");
-            return false;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return true;
+    public static float lerpElevation(int modX, float remX, int modZ, float remZ) {
+        float thisHeight = WorldGenerator.getElevation(modX, modZ);
+        int dx = 0, dz = 0;
+        if (remX < 0.5) dx = -1;
+        if (remZ < 0.5) dz = -1;
+        int u0 = modX + dx, v0 = modZ + dz;
+        int u1 = u0 + 1,    v1 = v0 + 1;
+        float i00 = thisHeight, i01 = thisHeight, i10 = thisHeight, i11 = thisHeight;
+        if (WorldGenerator.isValidAtlasPos(u0, v0)) i00 = WorldGenerator.getElevation(u0, v0);
+        if (WorldGenerator.isValidAtlasPos(u0, v1)) i01 = WorldGenerator.getElevation(u0, v1);
+        if (WorldGenerator.isValidAtlasPos(u1, v0)) i10 = WorldGenerator.getElevation(u1, v0);
+        if (WorldGenerator.isValidAtlasPos(u1, v1)) i11 = WorldGenerator.getElevation(u1, v1);
+        remX = dx == -1 ? 1 - remX : remX; // ensure that lerping is not done backwards
+        remZ = dz == -1 ? 1 - remZ : remZ;
+        return (float) MathHelper.lerp2(remX, remZ, i01, i11, i00, i10);
     }
 
-    public static AtlasPoint[][] readAtlas(String path) {
-        try {
-            FileInputStream fileInputStream = new FileInputStream(path + "\\" +Gaia.MOD_ID +"\\"+ Gaia.ATLAS_PATH);
-            ObjectInputStream fIn = new ObjectInputStream(fileInputStream);
-            Object object = fIn.readObject();
-            if (object instanceof AtlasPoint[][]) {
-                Gaia.LOGGER.info("loaded atlas...");
-                return (AtlasPoint[][]) object;
-            } else {
-                Gaia.LOGGER.warn("atlas file at \"" + path + "\\" +Gaia.MOD_ID +"\\"+ Gaia.ATLAS_PATH + "\" was malformed!");
+    public static double lerpElevation(int xPx, int zPx, int xBlock, int zBlock) {
+        int x0 = xBlock >= 0 ? 0 : -1;
+        int z0 = zBlock >= 0 ? 0 : -1;
+        int scaleFactor = WorldGenerator.SCALE_FACTOR;
+        int worldRadius = WorldGenerator.WORLD_RADIUS;
+        xBlock += worldRadius;
+        zBlock += worldRadius;
+        x0 += (xBlock+worldRadius) % scaleFactor >= scaleFactor / 2F ? 1 : 0;
+        z0 += (zBlock+worldRadius) % scaleFactor >= scaleFactor / 2F ? 1 : 0;
+        double x = curp((xBlock - scaleFactor / 2F) % scaleFactor / (float) scaleFactor);
+        double z = curp((zBlock - scaleFactor / 2F) % scaleFactor / (float) scaleFactor);
+        return MathHelper.lerp2(
+                x, z,
+                WorldGenerator.getElevation(xPx - 1 + x0, zPx - 1 + z0),
+                WorldGenerator.getElevation(xPx + x0, zPx - 1 + z0),
+                WorldGenerator.getElevation(xPx - 1 + x0, zPx + z0),
+                WorldGenerator.getElevation(xPx + x0, zPx + z0));
+    }
 
-            }
-        } catch (FileNotFoundException ignored) {
-        } catch (ClassNotFoundException e) {
-            Gaia.LOGGER.warn("atlas file at \"" + path + Gaia.ATLAS_PATH + "\" was malformed!");
-        } catch (IOException e) {
-            e.printStackTrace();
+    public static double curp(double input) {
+        // curvy + interpolation
+        if (input < -1 || input > 1) {
+            Gaia.LOGGER.error("tried to perform a curp on the value "+input+", which is not in [-1, 1]!");
+            return input;
         }
-        WorldGenerator.SHOULD_GENERATE = true;
-        return new AtlasPoint[WorldGenerator.ATLAS_WIDTH][WorldGenerator.ATLAS_WIDTH];
+        return -Math.cos(Math.PI/2*(input+1)); // it's that little smoothing function they used for neural networks
     }
 }

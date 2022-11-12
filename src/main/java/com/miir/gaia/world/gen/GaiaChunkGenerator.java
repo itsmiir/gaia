@@ -1,8 +1,8 @@
 package com.miir.gaia.world.gen;
 
 import com.google.common.collect.Sets;
-import com.miir.gaia.Gaia;
 import com.miir.gaia.gen.WorldGenerator;
+import com.miir.gaia.gen.artemis.Artemis;
 import com.miir.gaia.gen.vulcan.Vulcan;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -85,6 +85,7 @@ public class GaiaChunkGenerator extends ChunkGenerator {
 
     @Override
     public void buildSurface(ChunkRegion region, StructureAccessor structures, NoiseConfig noiseConfig, Chunk chunk) {
+        Artemis.buildSurface(region, structures, noiseConfig, chunk, Artemis.SURFACE_RULE);
     }
 
     @Override
@@ -245,13 +246,13 @@ public class GaiaChunkGenerator extends ChunkGenerator {
 
     @Override
     public int getHeight(int x, int z, Heightmap.Type heightmap, HeightLimitView world, NoiseConfig noiseConfig) {
-        return Vulcan.getHeight(x, z);
+        return Math.round(Vulcan.getHeight(x, z));
     }
 
     @Override
     public VerticalBlockSample getColumnSample(int x, int z, HeightLimitView world, NoiseConfig noiseConfig) {
         BlockState[] states = new BlockState[getWorldHeight()];
-        int h = Vulcan.getHeight(x, z);
+        int h = Math.round(Vulcan.getHeight(x, z));
         for (int i = 0; i < getWorldHeight(); i++) {
             if (i <= h) {
                 states[i] = settings.defaultBlock();

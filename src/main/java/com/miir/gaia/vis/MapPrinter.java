@@ -45,7 +45,7 @@ public abstract class MapPrinter {
         }
     }
 
-    public static void printAtlas(String path, Function<Point, Integer> colorFunction) {
+    public static String printAtlas(String path, Function<Point, Integer> colorFunction) {
         BufferedImage img = new BufferedImage(WorldGenerator.ATLAS_WIDTH, WorldGenerator.ATLAS_WIDTH, BufferedImage.TYPE_INT_RGB);
         for (int y = 0; y < WorldGenerator.ATLAS_WIDTH; y++) {
             for (int x = 0; x < WorldGenerator.ATLAS_WIDTH; x++) {
@@ -58,8 +58,10 @@ public abstract class MapPrinter {
         } catch (IOException e) {
             e.printStackTrace();
             Gaia.LOGGER.error("could not print a map!");
+            return "<error>";
         }
         Gaia.LOGGER.info("logged map to "+path+".png");
+        return path+".png";
     }
 
     public static int lerpElevationColor(float h) {

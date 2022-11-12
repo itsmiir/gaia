@@ -3,6 +3,7 @@ package com.miir.gaia.gen;
 import com.miir.gaia.Gaia;
 import com.miir.gaia.gen.visiwa.AtlasPoint;
 import com.miir.gaia.gen.visiwa.Visiwa;
+import com.miir.gaia.serialization.GaiaSerializer;
 import com.miir.gaia.world.gen.GaiaChunkGenerator;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -22,7 +23,7 @@ public abstract class WorldGenerator {
     public static final int LAVA_LEVEL = -100;
     public static boolean SHOULD_GENERATE = false;
     public static long SEED;
-    private static Random RANDOM;
+    public static Random RANDOM;
     private static SimplexNoiseSampler simplex;
     public static boolean INITIALIZED = false;
 
@@ -31,7 +32,7 @@ public abstract class WorldGenerator {
      * a radius of 400,000 m -> π*4000000² = 502.655 Gm²; compare to earth's surface area of 510.072 Gm². a more accurate
      * approximation would be 402,940 m -> 510.0710 Gm²
      */
-    public static final int WORLD_RADIUS = 4000;
+    public static final int WORLD_RADIUS = 1024*8;
 
     /**
      * the world surface height is stored as a float from 0 to 1; mapped to these values. earth's surface deviates by
@@ -41,7 +42,7 @@ public abstract class WorldGenerator {
      * as big as the vanilla chunks.
      */
     public static final int MAX_HEIGHT = 1024;
-    public static final int SEA_LEVEL = 0;
+    public static final int SEA_LEVEL = WORLDGEN_BASE_HEIGHT /2 - 64;
     public static final int MIN_HEIGHT = -MAX_HEIGHT;
     //    this value is used to determine the starting seafloor height
     public static final int MEAN_SEAFLOOR_DEPTH = MIN_HEIGHT / 2;
@@ -51,6 +52,7 @@ public abstract class WorldGenerator {
     public static final int ATLAS_WIDTH = 512;
     public static final int HEIGHTMAP_OCTAVES = 6;
     public static final int ATLAS_AREA = (int) ((ATLAS_WIDTH/2f)*(ATLAS_WIDTH/2f)*Math.PI);
+    public static final int SCALE_FACTOR = WORLD_RADIUS*2 / ATLAS_WIDTH;
 
     public static AtlasPoint[][] MAP;
 
@@ -59,10 +61,12 @@ public abstract class WorldGenerator {
         RANDOM = new Random(seed);
         simplex = new SimplexNoiseSampler(new CheckedRandom(SEED));
         INITIALIZED = true;
-        MAP = Visiwa.readAtlas(path);
+        MAP = GaiaSerializer.readAtlas(path);
         if (SHOULD_GENERATE) {
-            Visiwa.build(path);
-            Visiwa.writeAtlas(path);
+            Visiwa.build();
+            if (!GaiaSerializer.writeAtlas(path)) {
+                Gaia.LOGGER.error("could not save atlas to level directory!");
+            }
             SHOULD_GENERATE = false;
         }
     }
@@ -89,10 +93,11 @@ public abstract class WorldGenerator {
         return isValidAtlasPos(p.x, p.y);
     }
     public static boolean isInsideWorld(int x, int z) {
-        int atlasX = Visiwa.blockToAtlasCoord(x);
-        int atlasZ = Visiwa.blockToAtlasCoord(z);
-        if (atlasX == -1 || atlasZ == -1) return false;
-        else return isValidAtlasPos(atlasX, atlasZ);
+        return baseHeight(x / ((float) WORLD_RADIUS), z / (float) WORLD_RADIUS) < 0;
+//        int atlasX = Visiwa.blockToAtlasCoord(x);
+//        int atlasZ = Visiwa.blockToAtlasCoord(z);
+//        if (atlasX == -1 || atlasZ == -1) return false;
+//        else return isValidAtlasPos(atlasX, atlasZ);
     }
     public static boolean isValidChunk(ChunkPos pos) {
         return isInsideWorld(pos.x / 16, pos.z / 16);
@@ -105,6 +110,12 @@ public abstract class WorldGenerator {
         float xMod = x*2-1;
         float yMod = y*2-1;
         return (Math.sqrt(Math.pow(xMod, 2) + Math.pow(yMod, 2)) > 1) ? -1 : 0.1f;
+    }
+
+    public static float getElevation(int x, int z) {
+        int xx = x < WorldGenerator.ATLAS_WIDTH ? x : WorldGenerator.ATLAS_WIDTH-1;
+        int zz = z < WorldGenerator.ATLAS_WIDTH ? z : WorldGenerator.ATLAS_WIDTH-1;
+        return MAP[xx][zz].getElevation();
     }
 
     public static void register() {

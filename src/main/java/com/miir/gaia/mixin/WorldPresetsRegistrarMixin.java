@@ -8,11 +8,9 @@ import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryEntry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.biome.Biome;
-import net.minecraft.world.biome.source.MultiNoiseBiomeSource;
 import net.minecraft.world.dimension.DimensionOptions;
 import net.minecraft.world.gen.WorldPreset;
 import net.minecraft.world.gen.WorldPresets;
-import net.minecraft.world.gen.chunk.ChunkGenerator;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -21,24 +19,17 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(WorldPresets.Registrar.class)
-public abstract class PresetMixin {
-    @Shadow protected abstract RegistryEntry<WorldPreset> register(RegistryKey<WorldPreset> key, DimensionOptions dimensionOptions);
+public abstract class WorldPresetsRegistrarMixin {
 
+    @Shadow protected abstract RegistryEntry<WorldPreset> register(RegistryKey<WorldPreset> key, DimensionOptions dimensionOptions);
     @Shadow @Final private Registry<StructureSet> structureSetRegistry;
     @Shadow @Final private Registry<Biome> biomeRegistry;
 
-    @Shadow protected abstract DimensionOptions createOverworldOptions(ChunkGenerator chunkGenerator);
-
-
-
-    // defining our registry key. this key provides an Identifier for our preset, that we can use for our lang files and data elements.
-    private static final RegistryKey<WorldPreset> GAIA = RegistryKey.of(Registry.WORLD_PRESET_KEY, Gaia.id("gaia"));
-
     @Inject(method = "initAndGetDefault", at = @At("RETURN"))
-    private void addPresets(CallbackInfoReturnable<RegistryEntry<WorldPreset>> cir) {
-        // the register() method is shadowed from the target class
+    private void addGaiaPreset(CallbackInfoReturnable<RegistryEntry<WorldPreset>> cir) {
         this.register(
-                GAIA, new DimensionOptions(
+                Gaia.GAIA_PRESET_KEY,
+                new DimensionOptions(
                         BuiltinRegistries.DIMENSION_TYPE.entryOf(
                                 RegistryKey.of(
                                         Registry.DIMENSION_TYPE_KEY,
@@ -46,5 +37,7 @@ public abstract class PresetMixin {
                         new GaiaChunkGenerator(
                                 biomeRegistry,
                                 structureSetRegistry)));
+        // todo: implement config screen
+//        LevelScreenProvider.WORLD_PRESET_TO_SCREEN_PROVIDER.put(Optional.of(Gaia.GAIA_PRESET_KEY), new );
     }
 }

@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.nio.file.Path;
 
 @Mixin(MinecraftServer.class)
-public abstract class LoadAtlasMixin {
+public abstract class MinecraftServerMixin {
     @Shadow @Final protected SaveProperties saveProperties;
 
     @Shadow public abstract Path getSavePath(WorldSavePath worldSavePath);

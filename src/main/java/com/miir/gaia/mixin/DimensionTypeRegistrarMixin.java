@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.OptionalLong;
 
 @Mixin(DimensionTypeRegistrar.class)
-public class DimTypeMixin {
+public class DimensionTypeRegistrarMixin {
     @Inject(
             method = "initAndGetDefault",
             at = @At("HEAD")
@@ -32,7 +32,9 @@ public class DimTypeMixin {
                         OptionalLong.empty(),
                         true, false, false,
                         true, 1.0, true, false,
-                        WorldGenerator.MIN_HEIGHT, WorldGenerator.MAX_HEIGHT - WorldGenerator.MIN_HEIGHT, WorldGenerator.MAX_HEIGHT - WorldGenerator.MIN_HEIGHT,
+                        WorldGenerator.MIN_HEIGHT,
+                        WorldGenerator.MAX_HEIGHT - WorldGenerator.MIN_HEIGHT,
+                        WorldGenerator.MAX_HEIGHT - WorldGenerator.MIN_HEIGHT,
                         BlockTags.INFINIBURN_OVERWORLD,
                         DimensionTypes.OVERWORLD_ID,
                         0.0f,

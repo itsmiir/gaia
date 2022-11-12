@@ -1,9 +1,5 @@
 package com.miir.gaia.gen.noise;
 
-import javax.swing.*;
-import java.awt.*;
-import java.util.ArrayList;
-
 public class VoronoiSampler {
     private final long seed;
     private static final float DIST = 1f;
