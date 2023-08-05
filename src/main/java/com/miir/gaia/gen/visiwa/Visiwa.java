@@ -17,12 +17,12 @@ import java.util.Random;
  * ranges and continents
  */
 public abstract class Visiwa {
-    public static final int PLATE_COUNT = 25; // approximate :)
-    private static final float SUBDUCTION_RATE = 0.2f;
-    public static final int DRIFT_TIME = 12;
+    public static final int PLATE_COUNT = 12; // approximate :)
+    private static final float SUBDUCTION_RATE = 0.4f;
+    public static final int DRIFT_TIME = 4;
     private static final float PLATE_SPEED = 20f;
     private static final float COASTLINE_SMOOTHNESS = 0.05f;
-    private static final float LAND_OFFSET = 0.55f;
+    private static final float LAND_OFFSET = 0.525f;
     private static final float DEPOSITION_STRENGTH = 0.1f;
     private static final double PLATE_JAGGEDNESS = WorldGenerator.ATLAS_WIDTH;
     private static final ArrayList<Point> PLATE_CENTERS = new ArrayList<>();
@@ -43,7 +43,7 @@ public abstract class Visiwa {
                 for (int y = 0; y < WorldGenerator.ATLAS_WIDTH; y++) {
                     float cx = ((float) x) / WorldGenerator.ATLAS_WIDTH;
                     float cy = ((float) y) / WorldGenerator.ATLAS_WIDTH;
-                    float f = simplexTerrain(cx*2f, cy*2f, false);
+                    float f = simplexTerrain(cx*2f, cy*2f, Gaia.TILEABLE);
                     f += WorldGenerator.baseHeight(cx, cy);
                     WorldGenerator.MAP[x][y].setElevation(MathHelper.clamp(f, 0, 1));
                 }
@@ -80,10 +80,10 @@ public abstract class Visiwa {
                 if (WorldGenerator.isValidAtlasPos(x, y)) {
                     float f = WorldGenerator.MAP[x][y].getElevation();
                     if (f > 0.5) {
-                        WorldGenerator.MAP[x][y].setElevation(-simplexTerrain(
-                                x/(WorldGenerator.ATLAS_WIDTH* COASTLINE_SMOOTHNESS),
-                                y/(WorldGenerator.ATLAS_WIDTH* COASTLINE_SMOOTHNESS), false)
-                                * DEPOSITION_STRENGTH + f*(1));
+                        WorldGenerator.MAP[x][y].setElevation((-simplexTerrain(
+                                                        x/(WorldGenerator.ATLAS_WIDTH* COASTLINE_SMOOTHNESS),
+                                                        y/(WorldGenerator.ATLAS_WIDTH* COASTLINE_SMOOTHNESS), false)
+                                                        * (DEPOSITION_STRENGTH)) + f*(1));
                     }
                 }
             }
@@ -208,28 +208,33 @@ public abstract class Visiwa {
         }
     }
 
-    private static float simplexTerrain(float x, float y, boolean pangaea) {
+    private static float simplexTerrain(float x, float y, boolean b) {
         float pos = 0;
         float neg = 0;
         for (int n = 0; n < WorldGenerator.HEIGHTMAP_OCTAVES; n++) {
-            pos += (WorldGenerator.sampleSimplex(
-                    x * 2 * (Math.pow(2, n)),
-                    y * 2 * (Math.pow(2, n)))
-            ) / (4*Math.pow(2, n));
-            neg += (WorldGenerator.sampleSimplex(
-                    (1 - x) * (Math.pow(2, n)),
-                    (1 - y) * (Math.pow(2, n)))
-                    - 1) / (10 * Math.pow(2, n));
+            pos += (float) ((WorldGenerator.sampleSimplex(
+                                x * 2 * (Math.pow(2, n)),
+                                y * 2 * (Math.pow(2, n)))
+                        ) / (4*Math.pow(2, n)));
+            neg += (float) ((WorldGenerator.sampleSimplex(
+                                (1 - x) * (Math.pow(2, n)),
+                                (1 - y) * (Math.pow(2, n)))
+                                - 1) / (10 * Math.pow(2, n)));
         }
         return MathHelper.clamp(((pos + neg) / 2f + LAND_OFFSET) *
-                (pangaea ?
-                        landDensity(Math.abs(Math.sqrt(Math.pow((x-0.5)*2, 2) + Math.pow((y-0.5)*2, 2))))
+                (b ?
+                        landDensity(Math.abs(Math.sqrt(Math.pow((x/2-0.5)*2, 2) + Math.pow((y/2-0.5)*2, 2))), Math.atan((x-1)/(y-1)))
                         : 1),
                 0f, 1.0f);
     }
 
-    private static float landDensity(double r) {
-        return (float) (1 - Math.pow(r, 8));
+    private static float landDensity(double r, double theta) {
+//        float f = 1.0f/100000;
+//        float f = (float) (Math.sin(theta) / 2 + 0.5) / 100000;
+        return (float) (1- (Math.pow(r,20)));
+//        return (float) (1 - Math.pow(r, 8) / f);
+//        return Math.max(1-f, 0);
+//        return 1;
     }
 
     public static int colorCoastalness(Point coord) {

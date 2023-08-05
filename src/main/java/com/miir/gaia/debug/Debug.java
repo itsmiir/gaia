@@ -17,6 +17,6 @@ public class Debug {
         if (!useSeed) WorldGenerator.SEED = System.currentTimeMillis();
         Visiwa.build();
         WorldGenerator.SEED = seed;
-        MapPrinter.printAtlas("map.png", Visiwa::colorElevation);
+        MapPrinter.printAtlas("map", Visiwa::colorElevation);
     }
 }

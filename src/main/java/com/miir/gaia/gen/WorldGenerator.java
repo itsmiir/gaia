@@ -49,7 +49,7 @@ public abstract class WorldGenerator {
 
 
     // noise settings used by visiwa
-    public static final int ATLAS_WIDTH = 512;
+    public static final int ATLAS_WIDTH = 1024;
     public static final int HEIGHTMAP_OCTAVES = 6;
     public static final int ATLAS_AREA = (int) ((ATLAS_WIDTH/2f)*(ATLAS_WIDTH/2f)*Math.PI);
     public static final int SCALE_FACTOR = WORLD_RADIUS*2 / ATLAS_WIDTH;
@@ -109,6 +109,9 @@ public abstract class WorldGenerator {
     public static float baseHeight(float x, float y) {
         float xMod = x*2-1;
         float yMod = y*2-1;
+        if (Gaia.TILEABLE) {
+            return Math.abs(xMod) <= 1 && Math.abs(yMod) <= 1 ? 0.1f : -1;
+        }
         return (Math.sqrt(Math.pow(xMod, 2) + Math.pow(yMod, 2)) > 1) ? -1 : 0.1f;
     }
 

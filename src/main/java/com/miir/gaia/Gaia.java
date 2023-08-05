@@ -2,26 +2,14 @@ package com.miir.gaia;
 
 import com.miir.gaia.debug.Debug;
 import com.miir.gaia.gen.WorldGenerator;
-import com.miir.gaia.gen.visiwa.Visiwa;
-import com.miir.gaia.vis.MapPrinter;
-import com.mojang.brigadier.Command;
-import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.command.CommandSource;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.gen.WorldPreset;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.mojang.brigadier.builder.LiteralArgumentBuilder.literal;
 
 public class Gaia implements ModInitializer {
 
@@ -47,6 +35,8 @@ public class Gaia implements ModInitializer {
 	public static final String ATLAS_PATH = "\\atlas.bin";
 	public static final RegistryKey<WorldPreset> GAIA_PRESET_KEY = RegistryKey.of(Registry.WORLD_PRESET_KEY, Gaia.id("gaia"));
 
+	public static final boolean TILEABLE = true;
+
 	public static @NotNull Identifier id(String path) {
 		return new Identifier(MOD_ID, path);
 	}
@@ -55,7 +45,11 @@ public class Gaia implements ModInitializer {
 	public void onInitialize() {
 		WorldGenerator.register();
 		Debug.register();
-//		MapPrinter.printAtlas("map", Visiwa::colorWithMarkers);
+		long l = System.currentTimeMillis();
+		System.out.print(l);
+		WorldGenerator.initialize(l, "/");
+		Debug.generateWorldMap(0, false);
+		throw new IllegalStateException();
 //		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
 //				((CommandDispatcher<ServerCommandSource>) dispatcher).register(literal("atlas")
 //						.then(literal("this")
